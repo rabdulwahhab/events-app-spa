@@ -3,6 +3,8 @@ defmodule Serverside.Users do
   The Users context.
   """
 
+  require Logger
+
   import Ecto.Query, warn: false
   alias Serverside.Repo
 
@@ -39,6 +41,13 @@ defmodule Serverside.Users do
 
   def get_user_by_name(name), do: Repo.get_by(User, name: name)
 
+  def create_user(%{password: password} = attrs) do
+    attrs
+    |> Map.merge(Argon2.add_hash(password))
+    |> Map.drop([:password])
+    |> create_user()
+  end
+
   @doc """
   Creates a user.
 
@@ -51,7 +60,7 @@ defmodule Serverside.Users do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user(attrs \\ %{}) do
+  def create_user(attrs) do
     %User{}
     |> User.changeset(attrs)
     |> Repo.insert()

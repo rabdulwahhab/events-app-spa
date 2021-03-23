@@ -6,8 +6,8 @@ defmodule Serverside.Invitations.Invitation do
     field(:email, :string)
     field(:response, :integer)
 
-    belongs_to(:entry, Events.Entries.Entry)
-    belongs_to(:user, Events.Users.User)
+    belongs_to(:entry, Serverside.Entries.Entry)
+    belongs_to(:user, Serverside.Users.User)
 
     timestamps()
   end

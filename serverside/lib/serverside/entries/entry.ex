@@ -7,9 +7,9 @@ defmodule Serverside.Entries.Entry do
     field(:description, :string)
     field(:name, :string)
 
-    belongs_to(:user, Events.Users.User)
-    has_many(:invitations, Events.Invitations.Invitation)
-    has_many(:comments, Events.Comments.Comment)
+    belongs_to(:user, Serverside.Users.User)
+    has_many(:invitations, Serverside.Invitations.Invitation)
+    has_many(:comments, Serverside.Comments.Comment)
 
     timestamps()
   end

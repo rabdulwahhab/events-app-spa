@@ -5,8 +5,8 @@ defmodule Serverside.Comments.Comment do
   schema "comments" do
     field(:body, :string)
 
-    belongs_to(:user, Events.Users.User)
-    belongs_to(:entry, Events.Entries.Entry)
+    belongs_to(:user, Serverside.Users.User)
+    belongs_to(:entry, Serverside.Entries.Entry)
 
     timestamps()
   end

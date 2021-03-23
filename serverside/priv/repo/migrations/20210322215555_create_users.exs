@@ -6,7 +6,6 @@ defmodule Serverside.Repo.Migrations.CreateUsers do
       add(:name, :string, null: false)
       add(:email, :string, null: false)
       add(:password_hash, :string, null: false)
-      add(:photo_hash, :string, null: false)
 
       timestamps()
     end
