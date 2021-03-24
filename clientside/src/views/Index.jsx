@@ -2,7 +2,7 @@ import { Jumbotron } from 'react-bootstrap';
 
 export default function Index() {
   return (
-    <Jumbotron>
+    <Jumbotron className="text-dark">
       <h1>{"Events @ measuringworm"}</h1>
       <h3>
         <small>

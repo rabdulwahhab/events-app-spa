@@ -7,6 +7,7 @@ defmodule ServersideWeb.EntryController do
   action_fallback ServersideWeb.FallbackController
 
   def index(conn, _params) do
+    # TODO preload??
     entries = Entries.list_entries()
     render(conn, "index.json", entries: entries)
   end

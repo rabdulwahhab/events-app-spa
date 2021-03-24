@@ -1,7 +1,9 @@
-defmodule Serverside.SessionController do
+defmodule ServersideWeb.SessionController do
   use ServersideWeb, :controller
 
   alias Serverside.Users
+
+  require Logger
 
   action_fallback ServersideWeb.FallbackController
 

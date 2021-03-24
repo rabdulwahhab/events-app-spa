@@ -15,7 +15,7 @@ function App() {
   }, []);
 
   return (
-    <Container>
+    <Container className="text-light">
       <Header />
       <Switch>
         <Route exact path="/">

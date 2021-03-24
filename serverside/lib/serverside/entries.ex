@@ -7,6 +7,8 @@ defmodule Serverside.Entries do
   alias Serverside.Repo
 
   alias Serverside.Entries.Entry
+  alias Serverside.Comments.Comment
+  alias Serverside.Comments
 
   @doc """
   Returns the list of entries.
@@ -18,7 +20,8 @@ defmodule Serverside.Entries do
 
   """
   def list_entries do
-    Repo.all(Entry)
+    Repo.all(Entry, limit: 10)
+    |> Repo.preload([:user])
   end
 
   @doc """
@@ -36,6 +39,26 @@ defmodule Serverside.Entries do
 
   """
   def get_entry!(id), do: Repo.get!(Entry, id)
+
+  def get_and_load_entry!(id) do
+    get_entry!(id)
+    # source: https://hexdocs.pm/ecto/Ecto.Repo.html#c:preload/3
+    |> Repo.preload([
+      :user,
+      :invitations,
+      comments: from(c in Comment, order_by: [desc: c.updated_at])
+    ])
+    |> load_entry_comments()
+  end
+
+  def load_entry_comments(entry) do
+    loadedComments =
+      Enum.map(
+        entry.comments,
+        fn comm -> Comments.load_comment(comm) end
+      )
+    %{entry | comments: loadedComments}
+  end
 
   @doc """
   Creates a entry.

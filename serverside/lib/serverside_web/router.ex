@@ -1,6 +1,7 @@
 defmodule ServersideWeb.Router do
   use ServersideWeb, :router
 
+
   pipeline :api do
     plug :accepts, ["json"]
   end
