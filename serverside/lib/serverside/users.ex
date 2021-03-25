@@ -48,6 +48,8 @@ defmodule Serverside.Users do
     |> create_user()
   end
 
+  def getUserByEmail(email), do: Repo.get_by(User, email: email)
+
   @doc """
   Creates a user.
 

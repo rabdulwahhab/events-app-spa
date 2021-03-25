@@ -1,60 +1,107 @@
-import { Switch, Route, useRouteMatch, useParams, Link } from 'react-router-dom';
+import React from 'react';
+import { Switch, Route, useRouteMatch, useHistory, useParams, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Container, Card, Form, Button, InputGroup, FormControl, FormLabel } from 'react-bootstrap';
-import { fetch_events, post_post } from '../api';
+import { Container, Jumbotron, Col, Row, Card, Form, Button, InputGroup, FormControl, FormLabel } from 'react-bootstrap';
+import { fetch_events, fetch_event, post_post, patch_event, post_invites } from '../api';
 import flatpickr from "flatpickr";
+import { convertDateTime } from '../util';
+import store from '../store';
+import Invites from './Invites';
 
-function Index({events}) {
+function Index({session, events}) {
+
+  console.log("Events listing", events);
 
   // TODO fetch events and display
   let { path, url } = useRouteMatch();
+  React.useEffect(() => {
+    fetch_events();
+  }, []);
 
   return (
     <div>
-      <h1>{"TODO"}</h1>
-      <Button
-        className="btn btn-primary"
-        onClick={fetch_events}>
-        {"Fetch"}
-      </Button>
-      <Container className="d-flex flex-wrap justify-content-around">
-        {events?.mapaa(event => {
-          (<Card key={event.id}>
+      <h3 className="mb-5 fw-lighter display-4">{"All events"}</h3>
+      <Container className="d-flex my-2 flex-wrap justify-content-around text-dark">
+        {events.map(event =>
+          <Card
+            key={event.id}
+            className="w-25 p-4 mx-1 mb-3">
             <Card.Title>{event.name}</Card.Title>
             <Card.Subtitle className="mb-3 text-muted">
-              {event.owner?.name}
+              {convertDateTime(event.date)}
             </Card.Subtitle>
             <Card.Text className="text-break">
               {event.description}
             </Card.Text>
             <Card.Link
               href={`${path}/${event.id}`}
-              className="btn btn-outline-primary">
+              className="btn btn-primary">
               {"View"}
             </Card.Link>
-          </Card>);
-        })}
+            {session.id === event.owner_id &&
+              <Card.Link
+                href={`${path}/${event.id}`}
+                size="sm"
+                className="btn btn-outline-primary">
+                {"View"}
+              </Card.Link>}
+            </Card>
+        )}
       </Container>
     </div>
   );
 }
 
-function New() {
+function New({session, eventId}) {
+
+  let history = useHistory();
 
   let opts = {
     enableTime: true,
     altInput: true,
-    altFormat: "F j, Y",
     dateFormat: "Y-m-d H:i",
   };
 
-  flatpickr("#pick-date", opts);
+  //let name, date, description = "";
+  let [ entry ] = store.getState().events;
+  let name = entry?.name || ""
+  let date = convertDateTime(entry?.date) || ""
+  let description = entry?.description || ""
 
-  function submitHandler(ev) {
+  React.useEffect(() => {
+    if (eventId) {
+      fetch_event(eventId);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    flatpickr("#pick-date", opts);
+  }, []);
+
+  function handle_create(ev) {
     ev.preventDefault();
-    // TODO get form values and pkg
-    // let resp = post_post("/entries/new", form_params);
-    // TODO dispatch depending on result, redirect on success
+    let form_params = {
+      name: ev.target[0].value,
+      date: ev.target[2].value,
+      description: ev.target[1].value,
+      user_id: session.user_id // FIXME use auth plug
+    };
+
+    let success = () => history.replace("/events");
+    post_post(form_params, success);
+  }
+
+  function handle_update(ev) {
+    ev.preventDefault();
+    let form_params = {
+      name: ev.target[0].value,
+      date: ev.target[2].value,
+      description: ev.target[1].value,
+      user_id: 1 // FIXME use auth plug
+    };
+
+    let success = () => history.replace("/events");
+    patch_event(eventId, form_params, success);
   }
 
   // Derived from react bootstrap examples here:
@@ -62,9 +109,11 @@ function New() {
 
   return (
     <div className="w-50 mx-auto">
-      <h1 className="display-4 fw-lighter my-3">{"Create an event"}</h1>
+      <h1 className="display-4 fw-lighter my-3">
+        {eventId ? "Edit event details" : "Create an event"}
+      </h1>
       <div>
-        <Form onSubmit={submitHandler}>
+        <Form onSubmit={eventId ? handle_update : handle_create}>
           <FormLabel>
             <h2 className="display-5">{"What"}</h2>
           </FormLabel>
@@ -73,6 +122,7 @@ function New() {
               <InputGroup.Text id="basic-addon1">{"Name"}</InputGroup.Text>
             </InputGroup.Prepend>
             <FormControl
+              defaultValue={name}
               aria-label="name"
               aria-describedby="basic-addon1"
               />
@@ -82,21 +132,28 @@ function New() {
             <InputGroup.Prepend>
               <InputGroup.Text>{"Description"}</InputGroup.Text>
             </InputGroup.Prepend>
-            <FormControl as="textarea" aria-label="description" />
+            <FormControl
+              as="textarea"
+              defaultValue={description}
+              aria-label="description" />
           </InputGroup>
 
-          <FormLabel><h2 className="display-5 mt-3">{"When"}</h2></FormLabel>
+          <FormLabel>
+            <h2 className="display-5 mt-3">{"When"}</h2>
+          </FormLabel>
           <InputGroup>
             <InputGroup.Prepend>
               <InputGroup.Text>{"Date"}</InputGroup.Text>
             </InputGroup.Prepend>
             <FormControl
               id="pick-date"
+              defaultValue={date}
               aria-label="date"
               />
           </InputGroup>
-          <Button className="btn btn-primary" size="lg">
-            {"Create"}
+
+          <Button type="submit" className="btn btn-primary mt-4" size="lg">
+            {eventId ? "Update" : "Create"}
           </Button>
         </Form>
       </div>
@@ -104,44 +161,114 @@ function New() {
   );
 }
 
-function Show() {
-  // The <Route> that rendered this component has a
-  // path of `/topics/:topicId`. The `:topicId` portion
-  // of the URL indicates a placeholder that we can
-  // get from `useParams()`.
+function Show({eventId}) {
 
-  let { event_id } = useParams();
-
-  return (
-    <h1>{`Viewing event(entry) ${event_id}`}</h1>
-  );
-}
-
-function Events({session, events, dispatch}) {
-
-  // This how get the component to act as a dispatcher
-  // to nested routes. Path is local to the domain while
-  // url is the fully expanded current url
   let { path, url } = useRouteMatch();
-  console.log("Events session", JSON.stringify(session, null, 2));
+  let { session } = store.getState();
 
-  return (
-    <Switch>
-      <Route exact path={path}>
-        <Index events={events} />
-      </Route>
-      <Route path={`${path}/new`}>
-        <New />
-      </Route>
-      <Route path={`${path}/:event_id`}>
-        <Show />
-      </Route>
-    </Switch>
-  );
-}
+  // TODO fetch full event at id
+  React.useEffect(() => {
+    fetch_event(eventId);
+  }, []);
 
-function state_to_props({session, events}) {
-  return {session, events};
-}
+  let [ entry ] = store.getState().events; // meh
+  console.log("Showing event:", entry);
+  console.log("id is", eventId)
+  let body;
+  if (entry) {
+    body = (
+      <div>
+        <Jumbotron className="text-dark py-5">
+          <h3 className="fw-lighter display-3">{entry.name}</h3>
+          <h4>{convertDateTime(entry.date)}</h4>
+          <h5>{`${entry.user.name} is hosting`}</h5>
+          <p className="pt-3">{entry.description}</p>
+          <Row className="justify-content-start mx-auto align-items-end">
+            {entry.owner_id === session.user_id &&
+              <div>
+                <Link to={`/events/${eventId}/invites`}
+                  className="btn btn-primary mt-4 mr-3">Invite</Link>
+                <Link to={`/events/${eventId}/invites/responses`}
+                  className="btn btn-primary mt-4 mr-3">
+                  {"View responses"}
+                </Link>
+                <Link to={`/events/${eventId}/edit`}
+                  className="btn btn-primary mt-4 mr-3">Edit</Link>
+              </div>}
+              <Button variant="success" onClick={() => {}}>{"Comment"}</Button>
+              </Row>
+            </Jumbotron>
+        <h2>Comments</h2>
+        {entry.comments.map((comm, i) =>
+          <Row key={i} className="p-2 mb-2">
+            {comm}
+          </Row>)}
+        </div>
+      );
+    } else {
+      body = (
+        <h3 className="fw-lighter display-3">
+          {"Event not found"}</h3>
+      );
+    }
 
-export default connect(state_to_props)(Events);
+    return (
+      <Col className="p-3 my-3">
+        {body}
+      </Col>
+    );
+  }
+
+  function Event() {
+    // The <Route> that rendered this component has a
+    // path of `/topics/:topicId`. The `:topicId` portion
+    // of the URL indicates a placeholder that we can
+    // get from `useParams()`.
+
+    let { eventId } = useParams();
+    let { path, url } = useRouteMatch();
+    console.log("In show", path, eventId)
+
+    return (
+      <Switch>
+        <Route exact path={path}>
+          <Show eventId={eventId} />
+        </Route>
+        <Route path={`${path}/invites`}>
+          <Invites eventId={eventId} />
+        </Route>
+        <Route path={`${path}/edit`}>
+          <New eventId={eventId} />
+        </Route>
+      </Switch>
+    );
+  }
+
+  function Events({session, events, dispatch}) {
+
+    // This how get the component to act as a dispatcher
+    // to nested routes. Path is local to the domain while
+    // url is the fully expanded current url
+    let { path, url } = useRouteMatch();
+    console.log("Events session", JSON.stringify(session, null, 2));
+
+    return (
+      <Switch>
+        <Route exact path={path}>
+          <Index session={session} events={events} />
+        </Route>
+        <Route path={`${path}/new`}>
+          <New session={session} />
+        </Route>
+        <Route path={`${path}/:eventId`}>
+          <Event />
+        </Route>
+      </Switch>
+    );
+  }
+
+  function state_to_props({session, events}) {
+    return {session, events};
+  }
+
+  export default connect(state_to_props)(Events);

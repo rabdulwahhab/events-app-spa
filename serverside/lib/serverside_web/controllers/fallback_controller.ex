@@ -5,9 +5,11 @@ defmodule ServersideWeb.FallbackController do
   See `Phoenix.Controller.action_fallback/1` for more details.
   """
   use ServersideWeb, :controller
+  require Logger
 
   # This clause handles errors returned by Ecto's insert/update/delete.
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
+    Logger.debug("Fallback changeset #{inspect(changeset)}")
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(ServersideWeb.ChangesetView)

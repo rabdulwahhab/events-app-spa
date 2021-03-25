@@ -4,7 +4,12 @@ import store from '../store';
 import { api_auth } from '../api';
 import { capitalize } from '../util';
 
-function Header({currentPage, error, session, dispatch}) {
+function Header({currentPage, errors, success, info, session, dispatch}) {
+
+
+  console.log("Header errors", errors);
+  console.log("Header success", success);
+
 
   function handleSignin(ev) {
     ev.preventDefault();
@@ -25,45 +30,57 @@ function Header({currentPage, error, session, dispatch}) {
 
   return (
     <div>
-    <Navbar variant="dark" bg="dark" className="p-4">
-      <Navbar.Brand href="/">{"Events"}</Navbar.Brand>
-      <Nav className="mr-auto">
-        <Nav.Link href="/events">{"View Events"}</Nav.Link>
-        <Nav.Link href="/events/new">{"Create an Event"}</Nav.Link>
-      </Nav>
-      {!session.token ?
-        (<Form inline onSubmit={handleSignin}>
-          <FormControl type="email" placeholder="Email" className="mr-sm-2" />
-          <FormControl type="password" placeholder="Password" className="mr-sm-2" />
-          <Button type="submit" variant="outline-primary">
-            {"Sign in"}
-          </Button>
-        </Form>) :
-        <Row className="align-items-center">
-          <Col>
-            {`Hello, ${session.username}`}
-          </Col>
-          <Col>
-            <Button
-              className="btn btn-primary h-auto w-auto text-nowrap"
-              onClick={handleSignout}>
-              {"Sign out"}
+      <Navbar variant="dark" bg="dark" className="p-4 justify-content-between">
+        <Navbar.Brand href="/">{"Events"}</Navbar.Brand>
+        {!session.token ?
+          (<Form inline
+            onSubmit={handleSignin}
+            className="">
+            <FormControl type="email" placeholder="Email" className="mr-sm-2" />
+            <FormControl type="password" placeholder="Password" className="mr-sm-2" />
+            <Button type="submit" variant="outline-primary">
+              {"Sign in"}
             </Button>
-          </Col>
-        </Row>}
-      </Navbar>
-      {error.map((err, i) =>
-        <Alert key={i} variant="danger">
-          {capitalize(err)}
-        </Alert>)}
-      </div>
-    );
-  }
+          </Form>) :
+          <Row>
+            <Nav className="mx-3">
+              <Nav.Link href="/events">{"View Events"}</Nav.Link>
+              <Nav.Link href="/events/new">{"Create an Event"}</Nav.Link>
+            </Nav>
+            <Row className="align-items-center">
+              <Col>
+                {`Hello, ${session.username}`}
+              </Col>
+              <Col>
+                <Button
+                  className="btn btn-primary h-auto w-auto text-nowrap"
+                  onClick={handleSignout}>
+                  {"Sign out"}
+                </Button>
+              </Col>
+            </Row>
+          </Row>}
+        </Navbar>
+        {success.map((msg, i) =>
+          <Alert key={i} variant="success">
+            {capitalize(msg)}
+          </Alert>)}
+        {info.map((msg, i) =>
+          <Alert key={i} variant="info">
+            {capitalize(msg)}
+          </Alert>)}
+        {errors.map((msg, i) =>
+          <Alert key={i} variant="danger">
+            {capitalize(msg)}
+          </Alert>)}
+        </div>
+      );
+    }
 
-  // Take state and condense to the props needed for the
-  // component
-  function state_to_props({error, session}) {
-    return {error, session};
-  }
+    // Take state and condense to the props needed for the
+    // component
+    function state_to_props({errors, success, info, session}) {
+      return {errors, success, info, session};
+    }
 
-  export default connect(state_to_props)(Header);
+    export default connect(state_to_props)(Header);

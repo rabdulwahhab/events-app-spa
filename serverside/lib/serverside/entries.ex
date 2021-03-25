@@ -60,6 +60,20 @@ defmodule Serverside.Entries do
     %{entry | comments: loadedComments}
   end
 
+  def getEntryInvitationStats(entry) do
+    Enum.reduce(
+      entry.invitations,
+      %{accepted: 0, declined: 0, none: 0},
+      fn invit, acc ->
+        case invit.response do
+          1 -> %{acc | accepted: acc.accepted + 1}
+          -1 -> %{acc | declined: acc.declined + 1}
+          _ -> %{acc | none: acc.none + 1}
+        end
+      end
+    )
+  end
+
   @doc """
   Creates a entry.
 

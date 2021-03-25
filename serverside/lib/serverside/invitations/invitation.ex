@@ -16,7 +16,7 @@ defmodule Serverside.Invitations.Invitation do
   def changeset(invitation, attrs) do
     invitation
     |> cast(attrs, [:response, :email, :entry_id, :user_id])
-    |> validate_required([:response, :email, :entry_id, :user_id])
+    |> validate_required([:email, :entry_id, :user_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:entry_id)
   end

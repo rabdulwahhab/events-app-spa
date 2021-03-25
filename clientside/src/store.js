@@ -2,13 +2,13 @@ import { createStore, combineReducers } from 'redux';
 
 function error_reducer(state = [], action) {
   switch (action.type) {
-    case "error/set":
+    case "errors/set":
       return action.data;
       break;
-    case "error/one":
+    case "errors/one":
       return [action.data];
       break;
-    case "error/add":
+    case "errors/add":
       return state.concat([action.data]);
       break;
     default:
@@ -44,7 +44,20 @@ function events_reducer(state = [], action) {
       return action.data;
       break;
     case "events/add":
-      return state.concat([action.data]);
+      return state.concat(action.data);
+      break;
+    default:
+      return state;
+  }
+}
+
+function event_invites_reducer(state = {}, action) {
+  switch (action.type) {
+    case "event_inv/set":
+      return action.data;
+      break;
+    case "event_inv/add":
+      return state.concat(action.data);
       break;
     default:
       return state;
@@ -74,6 +87,19 @@ function info_reducer(state = [], action) {
   }
 }
 
+function success_reducer(state = [], action) {
+  switch (action.type) {
+    case "success/set":
+      return action.data;
+      break;
+    case "success/add":
+      return state.concat([action.data]);
+      break;
+    default:
+      return state;
+  }
+}
+
 function session_reducer(state = {}, action) {
   switch (action.type) {
     case "session/set":
@@ -86,10 +112,12 @@ function session_reducer(state = {}, action) {
 
 // Combine state reducers to create global state reducer
 let root_reducer = combineReducers({
-  error: error_reducer,
+  errors: error_reducer,
   acct_form: acct_form_reducer,
   info: info_reducer,
+  success: success_reducer,
   events: events_reducer,
+  event_inv: event_invites_reducer,
   session: session_reducer,
   show: show_reducer
 });

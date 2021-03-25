@@ -2,6 +2,8 @@ defmodule ServersideWeb.EntryView do
   use ServersideWeb, :view
   alias ServersideWeb.EntryView
 
+  require Logger
+
   # This is basically mapping `render_one show.html`
   # on all the entries. It is a convenience function.
   # Notice how rendering a JSON response is a trickle
@@ -14,25 +16,29 @@ defmodule ServersideWeb.EntryView do
   end
 
   def render("show.json", %{entry: entry}) do
-    %{data: render_one(entry, EntryView, "full_entry.json")}
+    %{data: render_one(entry, EntryView, "entry.json")}
   end
 
   def render("entry.json", %{entry: entry}) do
     %{id: entry.id,
       owner_id: entry.user_id,
-      owner: entry.user,
       name: entry.name,
+      created_at: entry.inserted_at,
       description: entry.description,
       date: entry.date}
   end
 
-  def render("full_entry.json", %{entry: entry}) do
+  def render("show_full.json", %{entry: entry}) do
     basic_entry = render_one(entry, EntryView, "entry.json")
     entry_data =
       basic_entry
+      |> Map.put(:user, sanitize_user(entry.user))
       |> Map.put(:comments, entry.comments)
-      |> Map.put(:invitations, entry.invitations)
     %{data: entry_data}
+  end
+
+  defp sanitize_user(user) do
+    %{id: user.id, name: user.name}
   end
 
 end

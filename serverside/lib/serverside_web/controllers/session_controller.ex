@@ -39,12 +39,13 @@ defmodule ServersideWeb.SessionController do
           token: token
         }
         conn
+        |> assign(:current_user, user)
         |> put_resp_header("Content-Type", "application/json")
         |> send_resp(200, Jason.encode!(session))
         _ ->
         conn
         |> put_resp_header("Content-Type", "application/json")
-        |> send_resp(401, Jason.encode!(%{error: "auth failed"}))
+        |> send_resp(401, Jason.encode!(%{errors: "auth failed"}))
     end
   end
 end

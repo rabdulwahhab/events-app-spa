@@ -28,6 +28,11 @@ function App() {
           <Default />
         </Route>
       </Switch>
+      <footer className="my-auto p-4 footer">
+        <span className="text-muted">
+          {"Events @ measuringworm"}
+        </span>
+      </footer>
     </Container>
   );
 }

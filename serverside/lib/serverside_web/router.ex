@@ -10,9 +10,10 @@ defmodule ServersideWeb.Router do
     pipe_through :api
 
     resources "/users", UserController, except: [:new, :edit]
-    resources "/entries", EntryController, except: [:new, :edit]
-    resources "/comments", CommentController, except: [:new, :edit]
-    resources "/invitations", InvitationController, except: [:new, :edit]
+    resources "/entries", EntryController, except: [:new, :edit] do
+      resources "/comments", CommentController, except: [:new, :edit]
+      resources "/invitations", InvitationController, except: [:new, :edit]
+    end
     resources "/session", SessionController, only: [:create]
   end
 

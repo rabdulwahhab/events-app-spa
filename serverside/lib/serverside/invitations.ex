@@ -21,6 +21,11 @@ defmodule Serverside.Invitations do
     Repo.all(Invitation)
   end
 
+  def get_event_invites(entry_id) do
+    invites = Repo.all(from(i in Invitation, where: i.entry_id == ^entry_id))
+    Enum.map(invites, fn inv -> Map.take(inv, [:response, :email, :id]) end)
+  end
+
   @doc """
   Gets a single invitation.
 
