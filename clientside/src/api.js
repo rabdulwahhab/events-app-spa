@@ -49,6 +49,21 @@ async function api_patch(path, data) {
   return resp_data;
 }
 
+async function api_delete(path, data) {
+  let req = {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  };
+  console.log("DELETE at", api_base(path), "with", JSON.stringify(req, null, 2))
+  let resp = await fetch(api_base(path), req);
+  // let resp_data = await resp.json();
+  // console.log("DELETE response", JSON.stringify(resp_data, null, 2));
+  // return resp_data;
+}
+
 export function api_auth(email, password) {
   // post at session endpoint, dispatch set/session, redirect?
   api_post("/session", {email, password})
@@ -73,7 +88,7 @@ export function fetch_events() {
     .then(resp => {
       let error_resp = resp["errors"];
       if (error_resp) {
-        store.dispatch({ type: "errors/one", data: error_resp});
+        store.dispatch({ type: "errors/set", data: error_resp});
       } else {
         store.dispatch({ type: "events/add", data: resp["data"] });
         clear_errors();
@@ -90,7 +105,7 @@ export function fetch_event(event_id) {
     .then(resp => {
       let error_resp = resp["errors"];
       if (error_resp) {
-        store.dispatch({ type: "errors/one", data: error_resp});
+        store.dispatch({ type: "errors/set", data: error_resp });
       } else {
         store.dispatch({ type: "events/set", data: [resp["data"]] });
         clear_errors();
@@ -120,6 +135,25 @@ export function post_post(form_params, success) {
         store.dispatch({ type: "errors/set", data: parse_errors(resp["errors"]) });
       } else {
         store.dispatch({ type: "success/set", data: ["Created event"] })
+        store.dispatch({ type: "events/add", data: resp });
+        clear_errors();
+        success();
+      }
+    })
+    .catch(err => {
+      console.error("POST POST failed", err);
+      store.dispatch({ type: "errors/one", data: err });
+    });
+}
+
+export function post_comment(eventId, form_params, success) {
+  api_post(`/entries/${eventId}/comments`, {comment: form_params})
+    .then(resp => {
+      let error_resp = resp["errors"];
+      if (error_resp) {
+        store.dispatch({ type: "errors/set", data: parse_errors(resp["errors"]) });
+      } else {
+        store.dispatch({ type: "success/set", data: ["Comment posted"] })
         store.dispatch({ type: "events/add", data: resp });
         clear_errors();
         success();
@@ -163,6 +197,24 @@ export function post_invites(form_params, success) {
   });
 }
 
+export function patch_invite(entry_id, invit_id, form_params, success) {
+  api_patch(`/entries/${entry_id}/invitations/${invit_id}`, {invitation: form_params})
+  .then(resp => {
+    let errors = resp["errors"];
+    if (errors) {
+      store.dispatch({ type: "errors/set", data: parse_errors(resp["errors"]) });
+    } else {
+      store.dispatch({ type: "success/set", data: ["Response recorded"] });
+      clear_errors();
+      success();
+    }
+  })
+  .catch(err => {
+    console.error("POST POST failed", err);
+    store.dispatch({ type: "errors/one", data: err });
+  });
+}
+
 export function fetch_invites({entry_id}) {
   api_get(`/entries/${entry_id}/invitations`, {entry_id: entry_id})
   .then(resp => {
@@ -177,4 +229,15 @@ export function fetch_invites({entry_id}) {
     console.error("POST POST failed", err);
     store.dispatch({ type: "errors/one", data: err });
   });
+}
+
+export function delete_comment(eventId, comm_id, success) {
+  api_delete(`/entries/${eventId}/comments/${comm_id}`, {id: comm_id})
+    .then(resp => {
+      clear_errors();
+    })
+    .catch(err => {
+      console.error("POST POST failed", err);
+      store.dispatch({ type: "errors/one", data: err });
+    });
 }

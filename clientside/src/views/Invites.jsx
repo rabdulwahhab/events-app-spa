@@ -1,18 +1,26 @@
 import React from 'react';
 import { Switch, Route, useRouteMatch, useHistory, useParams, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Container, Jumbotron, Col, Row, Card, Form, Button, InputGroup, FormControl, FormLabel } from 'react-bootstrap';
-import { fetch_events, fetch_event, fetch_invites, post_post, patch_event, post_invites } from '../api';
+import { Container, Jumbotron, Col, Row, Card, Form, Button, InputGroup, FormControl, FormLabel, Table } from 'react-bootstrap';
+import { fetch_events, fetch_event, fetch_invites, post_post, patch_event, post_invites, patch_invite } from '../api';
 import flatpickr from "flatpickr";
 import { convertDateTime } from '../util';
 import store from '../store';
 
 
-function Responses({eventId, session}) {
+function Show({eventId, session}) {
 
   let { event_inv } = store.getState();
   console.log("event inv", event_inv);
   let { invitations, stats } = event_inv;
+
+  function translateResponse(inv_resp) {
+    switch (inv_resp) {
+      case 1: return "Accepted"; break;
+      case -1: return "Declined"; break;
+      default: return "..."; break;
+    }
+  }
 
   React.useEffect(() => {
     // FIXME user id?
@@ -24,7 +32,7 @@ function Responses({eventId, session}) {
       <h1 className="display-4 fw-lighter my-3">
         {"Responses"}
       </h1>
-      {Object.keys(event_inv) > 0 &&
+      {stats &&
         <Jumbotron className="text-dark p-4">
           <Row className="mx-auto text-center">
             <Col><h3>{`Accepted: ${stats.accepted}`}</h3></Col>
@@ -32,73 +40,180 @@ function Responses({eventId, session}) {
             <Col><h3>{`Maybe: ${stats.none}`}</h3></Col>
           </Row>
         </Jumbotron>}
-      </div>
-    );
-  }
+      {invitations &&
+      <Table className="bordered hover w-50 mx-auto text-center" variant="dark">
+        <thead>
+          <tr>
+            <th>Invited</th>
+            <th>Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invitations.map((inv, i) =>
+            <tr key={inv.id}>
+              <td>{inv.email}</td>
+              <td>{translateResponse(inv.response)}</td>
+            </tr>)}
+        </tbody>
+      </Table>}
+    </div>
+  );
+}
 
-  function New({eventId, session}) {
+function invite_state_to_props({event_inv}) {
+  return {event_inv};
+}
+let Responses = connect(invite_state_to_props)(Show);
 
-    let history = useHistory();
+function InvResp({eventId, events, invite}) {
 
-    function handle_submit(ev) {
-      ev.preventDefault();
-      console.log(ev)
-      let form_params = {
-        emails: ev.target[0].value,
-        entry_id: eventId
-      }
-      let success = () => history.replace(`/events/${eventId}`);
+  // TODO only those invited can respond
 
-      post_invites(form_params, success);
+  let { inviteId } = useParams();
+  let history = useHistory();
+
+  console.log("Ivites event is", events)
+  console.log("IINVITE ID", inviteId)
+  let [ entry ] = events
+
+  function handle_respond(response) {
+    // post 'UPDATE' invite response
+    let form_params = {
+      id: inviteId,
+      entry_id: eventId,
+      response: response
     }
+    let success = () => history.replace(`/events/${eventId}`);
 
+    patch_invite(eventId, inviteId, form_params, success);
+  }
 
-    return (
+  let body;
+  if (entry) {
+    body =
+    <div>
+      <h3 className="fw-lighter display-3">{"You've been invited"}</h3>
+      <Jumbotron className="text-dark py-5">
+        <h3 className="fw-lighter display-3">{entry.name}</h3>
+        <h4>{convertDateTime(entry.date)}</h4>
+        <h5>{`${entry.user.name} is hosting`}</h5>
+        <p className="pt-3">{entry.description}</p>
+        <Row className="justify-content-start mx-auto align-items-end">
+          <div>
+            <Button
+              variant="success"
+              size="lg"
+              className="mt-4 mr-3"
+              onClick={() => handle_respond(1)}>
+              {"Accept"}
+            </Button>
+            <Button
+              variant="danger"
+              size="lg"
+              className="mt-4 mr-3"
+              onClick={() => handle_respond(-1)}>
+              {"Decline"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="mt-4 mr-3"
+              onClick={() => handle_respond(0)}>
+              {"Maybe"}
+            </Button>
+          </div>
+        </Row>
+      </Jumbotron>
+    </div>;
+  } else {
+    body =
       <div>
-        <h3 className="fw-lighter display-3">Invite</h3>
-        <Jumbotron className="text-dark">
-          <Form onSubmit={handle_submit}>
-            <FormLabel>
-              <h2 className="display-5 mt-3">{"Who"}</h2>
-            </FormLabel>
-            <FormControl
-              as="textarea"
-              placeholder="Enter email addresses separated by commas"
-              />
-            <Row className="pl-3 mt-4">
-              <Button type="submit" className="btn btn-primary mr-3" size="lg">
-                {"Invite"}
-              </Button>
-              <Link to={`/events/${eventId}`} className="btn h-100 btn-lg btn-secondary">Back</Link>
-            </Row>
-          </Form>
-        </Jumbotron>
-      </div>
-    );
+        <h3 className="fw-lighter display-3">{"Oh no"}</h3>
+        <p>{"You either don't have an account or weren't invited to this event"}</p>
+        <Col>
+          <Row><Link to="/users/new" className="btn btn-primary mb-3">{"Register"}</Link>
+        </Row>
+        <Row><Link to="/" className="btn btn-secondary">{"Go home"}</Link></Row>
+      </Col>
+    </div>;
   }
 
-  function Invites({eventId, event_inv, session}) {
+  React.useEffect(() => {
+    fetch_event(eventId);
+  }, []);
 
-    let { path, url } = useRouteMatch();
+  return (<div>{body}</div>);
+}
 
-    // TODO fetch entry invitation details and tabulate
+function respond_state_to_props({events, invite}) {
+  return {events, invite};
+}
+let Respond = connect(respond_state_to_props)(InvResp);
 
+function New({eventId, session}) {
 
+  let history = useHistory();
 
-    return (
-      <Switch>
-        <Route exact path={path}>
-          <New eventId={eventId} session={session} />
-        </Route>
-        <Route path={`${path}/responses`}>
-          <Responses eventId={eventId} session={session} />
-        </Route>
-      </Switch>
-    );
+  function handle_submit(ev) {
+    ev.preventDefault();
+    console.log(ev)
+    let form_params = {
+      emails: ev.target[0].value,
+      entry_id: eventId
+    }
+    let success = () => history.replace(`/events/${eventId}`);
+
+    post_invites(form_params, success);
   }
 
-  function state_to_props({session, event_inv}) {
-    return {session, event_inv};
-  }
 
-  export default connect(state_to_props)(Invites);
+  return (
+    <div>
+      <h3 className="fw-lighter display-3">Invite</h3>
+      <Jumbotron className="text-dark">
+        <Form onSubmit={handle_submit}>
+          <FormLabel>
+            <h2 className="display-5 mt-3">{"Who"}</h2>
+          </FormLabel>
+          <FormControl
+            as="textarea"
+            placeholder="Enter email addresses separated by commas"
+            />
+          <Row className="pl-3 mt-4">
+            <Button type="submit" className="btn btn-primary mr-3" size="lg">
+              {"Invite"}
+            </Button>
+            <Link to={`/events/${eventId}`} className="btn h-100 btn-lg btn-secondary">Back</Link>
+          </Row>
+        </Form>
+      </Jumbotron>
+    </div>
+  );
+}
+
+function Invites({eventId, event_inv, session}) {
+
+  let { path, url } = useRouteMatch();
+
+  // TODO fetch entry invitation details and tabulate
+
+  return (
+    <Switch>
+      <Route exact path={path}>
+        <New eventId={eventId} session={session} />
+      </Route>
+      <Route path={`${path}/:inviteId`}>
+        <Respond eventId={eventId} session={session} />
+      </Route>
+      <Route path={`${path}/responses`}>
+        <Responses eventId={eventId} session={session} />
+      </Route>
+    </Switch>
+  );
+}
+
+function state_to_props({session, event_inv}) {
+  return {session, event_inv};
+}
+
+export default connect(state_to_props)(Invites);

@@ -9,6 +9,7 @@ defmodule Serverside.Entries do
   alias Serverside.Entries.Entry
   alias Serverside.Comments.Comment
   alias Serverside.Comments
+  alias Serverside.Users
 
   @doc """
   Returns the list of entries.
@@ -39,6 +40,7 @@ defmodule Serverside.Entries do
 
   """
   def get_entry!(id), do: Repo.get!(Entry, id)
+  def get_entry(id), do: Repo.get(Entry, id)
 
   def get_and_load_entry!(id) do
     get_entry!(id)
@@ -72,6 +74,14 @@ defmodule Serverside.Entries do
         end
       end
     )
+  end
+
+  def sanitize_comments(entry) do
+    Map.put(entry, :comments, Enum.map(entry.comments, fn comm -> Comments.sanitize_comment(comm) end))
+  end
+
+  def sanitize_user(entry) do
+    Map.put(entry, :user, Users.sanitize_user(entry.user))
   end
 
   @doc """

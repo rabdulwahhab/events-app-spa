@@ -7,6 +7,7 @@ defmodule Serverside.Comments do
   alias Serverside.Repo
 
   alias Serverside.Comments.Comment
+  alias Serverside.Users
 
   @doc """
   Returns the list of comments.
@@ -36,6 +37,17 @@ defmodule Serverside.Comments do
 
   """
   def get_comment!(id), do: Repo.get!(Comment, id)
+
+  def get_comments(entry_id) do
+    comms = Repo.all(from(comm in Comment, where: comm.entry_id == ^entry_id))
+    Enum.map(comms, fn comm -> load_comment(comm) end)
+    |> Enum.map(fn comm -> Map.take(comm, [:body, :user, :id]) end)
+  end
+
+  def sanitize_comment(comm) do
+    Map.take(comm, [:body, :id, :inserted_at, :user])
+    |> Map.put(:user, Users.sanitize_user(comm.user))
+  end
 
   def load_comment(comment), do: comment |> Repo.preload([:user])
 

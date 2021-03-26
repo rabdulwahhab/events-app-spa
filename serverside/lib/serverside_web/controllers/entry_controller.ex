@@ -1,6 +1,8 @@
 defmodule ServersideWeb.EntryController do
   use ServersideWeb, :controller
 
+  # plug Serverside.Plugs.RequireAuth
+
   alias Serverside.Entries
   alias Serverside.Entries.Entry
 
@@ -47,7 +49,12 @@ defmodule ServersideWeb.EntryController do
   end
 
   def show(conn, %{"id" => id}) do
-    entry = Entries.get_and_load_entry!(id)
+    entry =
+      Entries.get_and_load_entry!(id)
+      |> Entries.sanitize_comments()
+      |> Entries.sanitize_user()
+      |> Map.drop([:invitations])
+
     Logger.debug("Entry show: #{inspect(entry)}")
     render(conn, "show_full.json", entry: entry)
   end

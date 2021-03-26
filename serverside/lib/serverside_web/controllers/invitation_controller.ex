@@ -5,6 +5,8 @@ defmodule ServersideWeb.InvitationController do
   alias Serverside.Invitations.Invitation
   alias Serverside.Users
   alias Serverside.Entries
+  # plug Serverside.Plugs.RequireAuth
+  # plug Serverside.Plugs.RequireOwner when action not in [:index, :show]
 
   require Logger
 
@@ -137,13 +139,14 @@ defmodule ServersideWeb.InvitationController do
     render(conn, "show.json", invitation: invitation)
   end
 
-  # def update(conn, %{"id" => id, "invitation" => invitation_params}) do
-  #   invitation = Invitations.get_invitation!(id)
-#
-  #   with {:ok, %Invitation{} = invitation} <- Invitations.update_invitation(invitation, invitation_params) do
-  #     render(conn, "show.json", invitation: invitation)
-  #   end
-  # end
+  def update(conn, %{"invitation" => invitation_params}) do
+    %{id: id} = invitation_params
+    invitation = Invitations.get_invitation!(id)
+
+    with {:ok, %Invitation{} = invitation} <- Invitations.update_invitation(invitation, invitation_params) do
+      render(conn, "show.json", invitation: invitation)
+    end
+  end
 
   def delete(conn, %{"id" => id}) do
     invitation = Invitations.get_invitation!(id)

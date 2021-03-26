@@ -2,7 +2,7 @@ import React from 'react';
 import { Switch, Route, useRouteMatch, useHistory, useParams, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Container, Jumbotron, Col, Row, Card, Form, Button, InputGroup, FormControl, FormLabel } from 'react-bootstrap';
-import { fetch_events, fetch_event, post_post, patch_event, post_invites } from '../api';
+import { fetch_events, fetch_event, post_post, patch_event, post_invites, post_comment, delete_comment } from '../api';
 import flatpickr from "flatpickr";
 import { convertDateTime } from '../util';
 import store from '../store';
@@ -97,7 +97,7 @@ function New({session, eventId}) {
       name: ev.target[0].value,
       date: ev.target[2].value,
       description: ev.target[1].value,
-      user_id: 1 // FIXME use auth plug
+      user_id: session.user_id // FIXME use auth plug
     };
 
     let success = () => history.replace("/events");
@@ -161,10 +161,31 @@ function New({session, eventId}) {
   );
 }
 
-function Show({eventId}) {
+function Display({eventId}) {
 
   let { path, url } = useRouteMatch();
   let { session } = store.getState();
+
+  function handle_comment(ev) {
+    ev.preventDefault();
+    let form_params = {
+      body: ev.target[0].value,
+      entry_id: eventId,
+      user_id: session.user_id
+    };
+    let success = () => {
+      store.dispatch({ type: "flags/add", data: {commenting: undefined} });
+      fetch_event(eventId);
+    };
+    post_comment(eventId, form_params, success);
+  }
+
+  function handle_delete_comment(comm_id) {
+    // FIXME update (refetch on success)
+    delete_comment(eventId, comm_id);
+    fetch_event(eventId);
+    store.dispatch({ type: "success/set", data: ["Comment deleted"] })
+  }
 
   // TODO fetch full event at id
   React.useEffect(() => {
@@ -172,6 +193,8 @@ function Show({eventId}) {
   }, []);
 
   let [ entry ] = store.getState().events; // meh
+  let { flags } = store.getState();
+  console.log("show event flags", flags);
   console.log("Showing event:", entry);
   console.log("id is", eventId)
   let body;
@@ -195,14 +218,57 @@ function Show({eventId}) {
                 <Link to={`/events/${eventId}/edit`}
                   className="btn btn-primary mt-4 mr-3">Edit</Link>
               </div>}
-              <Button variant="success" onClick={() => {}}>{"Comment"}</Button>
+              {!flags.commenting &&
+                <Button
+                  variant="success"
+                  onClick={() => store.dispatch({
+                    type: "flags/add", data: {commenting: true}
+                  })}>
+                  {"Comment"}
+                </Button>}
               </Row>
+              {flags.commenting &&
+                <Form
+                  onSubmit={handle_comment}
+                  className="d-flex flex-row w-75">
+                  <Form.Row className="w-100 pt-4">
+                    <Col xs={6}>
+                      <Form.Control
+                        type="text"
+                        className="text-wrap"
+                        placeholder="Post a comment"/>
+                    </Col>
+                    <Col xs="auto">
+                      <Button type="submit" variant="success">Post</Button>
+                    </Col>
+                    <Col xs="auto">
+                      <Button
+                        variant="secondary"
+                        onClick={() => store.dispatch({
+                          type: "flags/add", data: {commenting: undefined}
+                        })}>
+                        Cancel
+                      </Button>
+                    </Col>
+                  </Form.Row>
+                </Form>}
             </Jumbotron>
         <h2>Comments</h2>
         {entry.comments.map((comm, i) =>
-          <Row key={i} className="p-2 mb-2">
-            {comm}
-          </Row>)}
+          <div key={comm.id} className="p-3 mb-2">
+            <Row className="mx-auto d-flex align-items-center">
+              <Col xs="auto"><h4>{comm.user.name}</h4></Col>
+              <Col>{convertDateTime(comm.inserted_at)}</Col>
+              {comm.user.id === session.user_id || comm.user.id === entry.owner_id &&
+                <Col>
+                  <Button
+                    onClick={() => handle_delete_comment(comm.id)}
+                    variant="danger"
+                    size="sm">Delete</Button>
+                </Col>}
+            </Row>
+            <Row className="px-5">{comm.body}</Row>
+          </div>)}
         </div>
       );
     } else {
@@ -218,6 +284,11 @@ function Show({eventId}) {
       </Col>
     );
   }
+
+  function show_state_to_props({events}) {
+    return {events};
+  }
+  let Show = connect(show_state_to_props)(Display);
 
   function Event() {
     // The <Route> that rendered this component has a
@@ -267,8 +338,8 @@ function Show({eventId}) {
     );
   }
 
-  function state_to_props({session, events}) {
-    return {session, events};
+  function state_to_props({session, events, flags}) {
+    return {session, events, flags};
   }
 
   export default connect(state_to_props)(Events);

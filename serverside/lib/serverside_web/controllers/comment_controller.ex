@@ -3,6 +3,7 @@ defmodule ServersideWeb.CommentController do
 
   alias Serverside.Comments
   alias Serverside.Comments.Comment
+  # plug Serverside.Plugs.RequireAuth
 
   action_fallback ServersideWeb.FallbackController
 
@@ -14,9 +15,7 @@ defmodule ServersideWeb.CommentController do
   def create(conn, %{"comment" => comment_params}) do
     with {:ok, %Comment{} = comment} <- Comments.create_comment(comment_params) do
       conn
-      |> put_status(:created)
-      |> put_resp_header("location", Routes.comment_path(conn, :show, comment))
-      |> render("show.json", comment: comment)
+      |> send_resp(:created, Jason.encode!(%{success: ["Comment created"]}))
     end
   end
 

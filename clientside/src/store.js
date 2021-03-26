@@ -51,6 +51,16 @@ function events_reducer(state = [], action) {
   }
 }
 
+function invitation_reducer(state = {}, action) {
+  switch (action.type) {
+    case "invite/set":
+      return action.data;
+      break;
+    default:
+      return state;
+  }
+}
+
 function event_invites_reducer(state = {}, action) {
   switch (action.type) {
     case "event_inv/set":
@@ -87,6 +97,19 @@ function info_reducer(state = [], action) {
   }
 }
 
+function flags_reducer(state = {}, action) {
+  switch (action.type) {
+    case "flags/set":
+      return action.data;
+      break;
+    case "flags/add":
+      return { ...state, ...action.data };
+      break;
+    default:
+      return state;
+  }
+}
+
 function success_reducer(state = [], action) {
   switch (action.type) {
     case "success/set":
@@ -117,6 +140,8 @@ let root_reducer = combineReducers({
   info: info_reducer,
   success: success_reducer,
   events: events_reducer,
+  invite: invitation_reducer,
+  flags: flags_reducer,
   event_inv: event_invites_reducer,
   session: session_reducer,
   show: show_reducer

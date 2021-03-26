@@ -32,7 +32,7 @@ defmodule ServersideWeb.EntryView do
     basic_entry = render_one(entry, EntryView, "entry.json")
     entry_data =
       basic_entry
-      |> Map.put(:user, sanitize_user(entry.user))
+      |> Map.put(:user, entry.user)
       |> Map.put(:comments, entry.comments)
     %{data: entry_data}
   end
