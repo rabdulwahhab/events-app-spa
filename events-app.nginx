@@ -5,6 +5,11 @@ server {
     listen [::]:80;
 
     server_name events-spa.measuringworm.com www.events-spa.measuringworm.com;
+    index index.html;
+
+    location / {
+      root /home/events-spa/www/events-spa/clientside/public;
+    }
 
     location /api/v1/ {
         proxy_pass http://localhost:8910;
