@@ -6,6 +6,7 @@ import Default from './views/404';
 import Index from './views/Index';
 import Header from './comp/Header';
 import Events from './views/Events';
+import Users from './views/Users';
 
 function App() {
 
@@ -23,6 +24,9 @@ function App() {
         </Route>
         <Route path="/events">
           <Events />
+        </Route>
+        <Route path="/users">
+          <Users />
         </Route>
         <Route path="*">
           <Default />

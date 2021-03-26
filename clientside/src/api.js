@@ -64,7 +64,7 @@ async function api_delete(path, data) {
   // return resp_data;
 }
 
-export function api_auth(email, password) {
+export function api_auth(email, password, success = () => {}) {
   // post at session endpoint, dispatch set/session, redirect?
   api_post("/session", {email, password})
     .then(data => {
@@ -75,6 +75,7 @@ export function api_auth(email, password) {
       } else {
         store.dispatch({ type: "session/set", data: data });
         clear_errors();
+        success();
       }
     })
     .catch(err => {
@@ -142,6 +143,24 @@ export function post_post(form_params, success) {
     })
     .catch(err => {
       console.error("POST POST failed", err);
+      store.dispatch({ type: "errors/one", data: err });
+    });
+}
+
+export function post_user(form_params, success) {
+  api_post("/users", {user: form_params})
+    .then(resp => {
+      let error_resp = resp["errors"];
+      if (error_resp) {
+        store.dispatch({ type: "errors/set", data: parse_errors(resp["errors"]) });
+      } else {
+        store.dispatch({ type: "success/set", data: ["Registered successfully"] })
+        clear_errors();
+        api_auth(form_params.email, form_params.password, success);
+      }
+    })
+    .catch(err => {
+      console.error("POST user failed", err);
       store.dispatch({ type: "errors/one", data: err });
     });
 }

@@ -13,7 +13,8 @@ defmodule ServersideWeb.UserController do
   end
 
   def create(conn, %{"user" => user_params}) do
-    with {:ok, %User{} = user} <- Users.create_user(user_params) do
+    # TODO hash password
+    with {:ok, %User{} = user} <- Users.create_user_with_passhash(user_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.user_path(conn, :show, user))

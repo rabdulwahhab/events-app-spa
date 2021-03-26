@@ -31,7 +31,13 @@ function Header({currentPage, errors, success, info, session, dispatch}) {
   return (
     <div>
       <Navbar variant="dark" bg="dark" className="p-4 justify-content-between">
-        <Navbar.Brand href="/">{"Events"}</Navbar.Brand>
+        <Row>
+          <Navbar.Brand href="/">{"Events"}</Navbar.Brand>
+          {!session.token &&
+            <Nav className="mx-3">
+              <Nav.Link href="/users/new">{"Register"}</Nav.Link>
+            </Nav>}
+        </Row>
         {!session.token ?
           (<Form inline
             onSubmit={handleSignin}

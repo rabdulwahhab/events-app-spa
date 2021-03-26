@@ -42,10 +42,15 @@ defmodule Serverside.Users do
 
   def get_user_by_name(name), do: Repo.get_by(User, name: name)
 
-  def create_user(%{password: password} = attrs) do
+  def stringify_keys(amap) do
+    for {k, v} <- amap, into: %{}, do: {to_string(k), v}
+  end
+
+  def create_user_with_passhash(%{"password" => password} = attrs) do
     attrs
     |> Map.merge(Argon2.add_hash(password))
-    |> Map.drop([:password])
+    |> Map.drop(["password"])
+    |>stringify_keys()
     |> create_user()
   end
 
