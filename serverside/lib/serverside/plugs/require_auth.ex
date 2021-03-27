@@ -15,7 +15,7 @@ defmodule Serverside.Plugs.RequireAuth do
     # whatever you want, and allow pass through. If error, error response and
     # halt
     Logger.debug("PLUG conn ---> #{inspect(conn)}")
-    token = case get_req_header(conn, "X-Auth") do
+    token = case get_req_header(conn, "x-auth") do
       [tok] -> tok
       _ -> nil
     end

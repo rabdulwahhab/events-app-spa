@@ -3,7 +3,7 @@ defmodule ServersideWeb.CommentController do
 
   alias Serverside.Comments
   alias Serverside.Comments.Comment
-  # plug Serverside.Plugs.RequireAuth
+  plug Serverside.Plugs.RequireAuth
 
   action_fallback ServersideWeb.FallbackController
 

@@ -1,13 +1,26 @@
 import store from './store';
 import { capitalize } from './util';
 
+let ERROR = {
+  failed: "Request failed",
+  unauthorized: "You aren't logged in"
+};
+
 function api_base(path) {
-  return `http://localhost:4000/api/v1${path}`;
+  return `http://events-spa.measuringworm.com/api/v1${path}`;
 }
 
 async function api_get(path, body = {}) {
+  let state = store.getState();
+  let token = state?.session?.token;
+  let opts = {
+    ...body,
+    headers: {
+      'X-Auth': token
+    }
+  };
   console.log("GET at", api_base(path), "with", JSON.stringify(body, null, 2));
-  let resp = await fetch(api_base(path), body);
+  let resp = await fetch(api_base(path), opts);
   let data = await resp.json(); // YOU HAVE TO AWAIT THIS
   console.log("GET response", JSON.stringify(data, null, 2));
   return data;
@@ -20,10 +33,13 @@ function clear_errors() {
 // Based on Nat Tuck lecture code here:
 // https://github.com/NatTuck/scratch-2021-01/blob/master/4550/0319/photo-blog-spa/web-ui/src/api.js
 async function api_post(path, data) {
+  let state = store.getState();
+  let token = state?.session?.token;
   let req = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Auth': token
     },
     body: JSON.stringify(data),
   };
@@ -35,10 +51,13 @@ async function api_post(path, data) {
 }
 
 async function api_patch(path, data) {
+  let state = store.getState();
+  let token = state?.session?.token;
   let req = {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
+      'X-Auth': token
     },
     body: JSON.stringify(data),
   };
@@ -50,18 +69,24 @@ async function api_patch(path, data) {
 }
 
 async function api_delete(path, data) {
+  let state = store.getState();
+  let token = state?.session?.token;
   let req = {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
+      'X-Auth': token
     },
     body: JSON.stringify(data),
   };
   console.log("DELETE at", api_base(path), "with", JSON.stringify(req, null, 2))
   let resp = await fetch(api_base(path), req);
-  // let resp_data = await resp.json();
-  // console.log("DELETE response", JSON.stringify(resp_data, null, 2));
-  // return resp_data;
+  console.log("DELETE response", JSON.stringify(resp, null, 2));
+  if (resp.ok) {
+    return "success";
+  } else {
+    return resp;
+  }
 }
 
 export function api_auth(email, password, success = () => {}) {
@@ -80,7 +105,7 @@ export function api_auth(email, password, success = () => {}) {
     })
     .catch(err => {
       console.error("AUTH failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      store.dispatch({ type: "errors/one", data: ERROR.failed });
     });
 }
 
@@ -97,7 +122,7 @@ export function fetch_events() {
     })
     .catch(err => {
       console.error("FETCH EVENTS failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      store.dispatch({ type: "errors/one", data: ERROR.failed });
     });
 }
 
@@ -114,7 +139,8 @@ export function fetch_event(event_id) {
     })
     .catch(err => {
       console.error("FETCH EVENT failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      let errors = [ERROR.failed, "Are you sure this event exists?"]
+      store.dispatch({ type: "errors/one", data: errors.join(". ") });
     });
 }
 
@@ -161,7 +187,7 @@ export function post_user(form_params, success) {
     })
     .catch(err => {
       console.error("POST user failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      store.dispatch({ type: "errors/one", data: ERROR.failed });
     });
 }
 
@@ -180,7 +206,7 @@ export function post_comment(eventId, form_params, success) {
     })
     .catch(err => {
       console.error("POST POST failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      store.dispatch({ type: "errors/one", data: ERROR.failed });
     });
 }
 
@@ -199,12 +225,12 @@ export function patch_event(eventId, form_params, success) {
     })
     .catch(err => {
       console.error("POST POST failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      store.dispatch({ type: "errors/one", data: ERROR.failed });
     });
 }
 
-export function post_invites(form_params, success) {
-  api_post("/invitations", {invitations: form_params})
+export function post_invites(entry_id, form_params, success) {
+  api_post(`/entries/${entry_id}/invitations`, {invitations: form_params})
   .then(resp => {
     store.dispatch({ type: "success/set", data: resp["succeeded"].map(suc => `Invited ${suc}`) });
     let errors = resp["malformed"].map(mal => `Couldn't recognize \'${mal}\'. Check your spelling`).concat(resp["failed"].map(fail => `Failed to invite ${fail}`));
@@ -212,7 +238,7 @@ export function post_invites(form_params, success) {
   })
   .catch(err => {
     console.error("POST POST failed", err);
-    store.dispatch({ type: "errors/one", data: err });
+    store.dispatch({ type: "errors/one", data: ERROR.failed });
   });
 }
 
@@ -230,7 +256,7 @@ export function patch_invite(entry_id, invit_id, form_params, success) {
   })
   .catch(err => {
     console.error("POST POST failed", err);
-    store.dispatch({ type: "errors/one", data: err });
+    store.dispatch({ type: "errors/one", data: ERROR.failed });
   });
 }
 
@@ -246,7 +272,23 @@ export function fetch_invites({entry_id}) {
   })
   .catch(err => {
     console.error("POST POST failed", err);
-    store.dispatch({ type: "errors/one", data: err });
+    store.dispatch({ type: "errors/one", data: ERROR.failed });
+  });
+}
+
+export function fetch_invite(entry_id, invit_id) {
+  api_get(`/entries/${entry_id}/invitations/${invit_id}`, {id: invit_id})
+  .then(resp => {
+    let errors = resp["errors"];
+    if (errors) {
+      store.dispatch({ type: "errors/set", data: resp["errors"] });
+    } else {
+      store.dispatch({ type: "invite/set", data: resp });
+    }
+  })
+  .catch(err => {
+    console.error("FETCH invitation failed", err);
+    store.dispatch({ type: "errors/one", data: ERROR.failed });
   });
 }
 
@@ -254,9 +296,15 @@ export function delete_comment(eventId, comm_id, success) {
   api_delete(`/entries/${eventId}/comments/${comm_id}`, {id: comm_id})
     .then(resp => {
       clear_errors();
+      console.log("Delete comm resp", resp)
+      if (resp === "success") {
+        store.dispatch({ type: "success/set", data: ["Comment deleted"] })
+      } else {
+        store.dispatch({ type: "errors/set", data: [ERROR.failed] })
+      }
     })
     .catch(err => {
-      console.error("POST POST failed", err);
-      store.dispatch({ type: "errors/one", data: err });
+      console.error("DELETE comment failed", err);
+      store.dispatch({ type: "errors/one", data: ERROR.failed });
     });
 }

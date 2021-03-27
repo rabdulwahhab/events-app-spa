@@ -2,7 +2,7 @@ import React from 'react';
 import { Switch, Route, useRouteMatch, useHistory, useParams, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Container, Jumbotron, Col, Row, Card, Form, Button, InputGroup, FormControl, FormLabel, Table } from 'react-bootstrap';
-import { fetch_events, fetch_event, fetch_invites, post_post, patch_event, post_invites, patch_invite } from '../api';
+import { fetch_events, fetch_event, fetch_invites, post_post, patch_event, post_invites, patch_invite, fetch_invite } from '../api';
 import flatpickr from "flatpickr";
 import { convertDateTime } from '../util';
 import store from '../store';
@@ -10,9 +10,14 @@ import store from '../store';
 
 function Show({eventId, session}) {
 
+  let { path, url } = useRouteMatch();
   let { event_inv } = store.getState();
   console.log("event inv", event_inv);
   let { invitations, stats } = event_inv;
+
+  function inv_url(invit_id) {
+    return `http://events-spa.measuringworm.com/events/${eventId}/invites/${invit_id}`;
+  }
 
   function translateResponse(inv_resp) {
     switch (inv_resp) {
@@ -46,6 +51,7 @@ function Show({eventId, session}) {
           <tr>
             <th>Invited</th>
             <th>Response</th>
+            <th>{"Invite link"}</th>
           </tr>
         </thead>
         <tbody>
@@ -53,6 +59,7 @@ function Show({eventId, session}) {
             <tr key={inv.id}>
               <td>{inv.email}</td>
               <td>{translateResponse(inv.response)}</td>
+              <td>{`${inv_url(inv.id)}`}</td>
             </tr>)}
         </tbody>
       </Table>}
@@ -65,7 +72,7 @@ function invite_state_to_props({event_inv}) {
 }
 let Responses = connect(invite_state_to_props)(Show);
 
-function InvResp({eventId, events, invite}) {
+function InvResp({eventId, events, invite, session}) {
 
   // TODO only those invited can respond
 
@@ -74,6 +81,7 @@ function InvResp({eventId, events, invite}) {
 
   console.log("Ivites event is", events)
   console.log("IINVITE ID", inviteId)
+  console.log("invite is", invite)
   let [ entry ] = events
 
   function handle_respond(response) {
@@ -88,8 +96,21 @@ function InvResp({eventId, events, invite}) {
     patch_invite(eventId, inviteId, form_params, success);
   }
 
+  React.useEffect(() => {
+    if (eventId && inviteId) {
+      console.log("FEWTCHING WITH", eventId, inviteId)
+      fetch_invite(eventId, inviteId);
+    }
+  }, [eventId, inviteId, session]);
+
+  React.useEffect(() => {
+    if (Object.keys(invite).length > 0) {
+      fetch_event(eventId);
+    }
+  }, []);
+
   let body;
-  if (entry) {
+  if (entry && Object.keys(invite).length > 0) {
     body =
     <div>
       <h3 className="fw-lighter display-3">{"You've been invited"}</h3>
@@ -138,15 +159,11 @@ function InvResp({eventId, events, invite}) {
     </div>;
   }
 
-  React.useEffect(() => {
-    fetch_event(eventId);
-  }, []);
-
   return (<div>{body}</div>);
 }
 
-function respond_state_to_props({events, invite}) {
-  return {events, invite};
+function respond_state_to_props({events, invite, session}) {
+  return {events, invite, session};
 }
 let Respond = connect(respond_state_to_props)(InvResp);
 
@@ -161,9 +178,9 @@ function New({eventId, session}) {
       emails: ev.target[0].value,
       entry_id: eventId
     }
-    let success = () => history.replace(`/events/${eventId}`);
+    let success = () => history.replace(`/events/${eventId}/invites/responses`);
 
-    post_invites(form_params, success);
+    post_invites(eventId, form_params, success);
   }
 
 
@@ -202,11 +219,11 @@ function Invites({eventId, event_inv, session}) {
       <Route exact path={path}>
         <New eventId={eventId} session={session} />
       </Route>
-      <Route path={`${path}/:inviteId`}>
-        <Respond eventId={eventId} session={session} />
-      </Route>
       <Route path={`${path}/responses`}>
         <Responses eventId={eventId} session={session} />
+      </Route>
+      <Route path={`${path}/:inviteId`}>
+        <Respond eventId={eventId} session={session} />
       </Route>
     </Switch>
   );

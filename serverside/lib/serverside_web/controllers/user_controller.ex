@@ -3,7 +3,7 @@ defmodule ServersideWeb.UserController do
 
   alias Serverside.Users
   alias Serverside.Users.User
-  # plug Serverside.Plugs.RequireAuth
+  plug Serverside.Plugs.RequireAuth when action not in [:create]
 
   action_fallback ServersideWeb.FallbackController
 

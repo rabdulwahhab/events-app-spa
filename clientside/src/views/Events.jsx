@@ -16,7 +16,7 @@ function Index({session, events}) {
   let { path, url } = useRouteMatch();
   React.useEffect(() => {
     fetch_events();
-  }, []);
+  }, [session]);
 
   return (
     <div>
@@ -24,7 +24,7 @@ function Index({session, events}) {
       <Container className="d-flex my-2 flex-wrap justify-content-around text-dark">
         {events.map(event =>
           <Card
-            key={event.id}
+            key={`event_${event.id}`}
             className="w-25 p-4 mx-1 mb-3">
             <Card.Title>{event.name}</Card.Title>
             <Card.Subtitle className="mb-3 text-muted">
@@ -33,18 +33,18 @@ function Index({session, events}) {
             <Card.Text className="text-break">
               {event.description}
             </Card.Text>
-            <Card.Link
-              href={`${path}/${event.id}`}
+            <Link
+              to={`${path}/${event.id}`}
               className="btn btn-primary">
               {"View"}
-            </Card.Link>
+            </Link>
             {session.id === event.owner_id &&
-              <Card.Link
-                href={`${path}/${event.id}`}
+              <Link
+                to={`${path}/${event.id}`}
                 size="sm"
                 className="btn btn-outline-primary">
                 {"View"}
-              </Card.Link>}
+              </Link>}
             </Card>
         )}
       </Container>
@@ -161,10 +161,9 @@ function New({session, eventId}) {
   );
 }
 
-function Display({eventId}) {
+function Display({eventId, session, success}) {
 
   let { path, url } = useRouteMatch();
-  let { session } = store.getState();
 
   function handle_comment(ev) {
     ev.preventDefault();
@@ -173,26 +172,30 @@ function Display({eventId}) {
       entry_id: eventId,
       user_id: session.user_id
     };
-    let success = () => {
+    let successCallback = () => {
       store.dispatch({ type: "flags/add", data: {commenting: undefined} });
       fetch_event(eventId);
     };
-    post_comment(eventId, form_params, success);
+    post_comment(eventId, form_params, successCallback);
   }
 
   function handle_delete_comment(comm_id) {
     // FIXME update (refetch on success)
     delete_comment(eventId, comm_id);
     fetch_event(eventId);
-    store.dispatch({ type: "success/set", data: ["Comment deleted"] })
   }
 
   // TODO fetch full event at id
   React.useEffect(() => {
+    console.log("Fetching event to display...")
     fetch_event(eventId);
-  }, []);
+  }, [success]);
 
-  let [ entry ] = store.getState().events; // meh
+  let entry;
+  let temp = store.getState().events; // meh
+  if (temp.length === 1) {
+    [ entry ] = temp;
+  }
   let { flags } = store.getState();
   console.log("show event flags", flags);
   console.log("Showing event:", entry);
@@ -213,7 +216,7 @@ function Display({eventId}) {
                   className="btn btn-primary mt-4 mr-3">Invite</Link>
                 <Link to={`/events/${eventId}/invites/responses`}
                   className="btn btn-primary mt-4 mr-3">
-                  {"View responses"}
+                  {"View invitations"}
                 </Link>
                 <Link to={`/events/${eventId}/edit`}
                   className="btn btn-primary mt-4 mr-3">Edit</Link>
@@ -255,11 +258,11 @@ function Display({eventId}) {
             </Jumbotron>
         <h2>Comments</h2>
         {entry.comments.map((comm, i) =>
-          <div key={comm.id} className="p-3 mb-2">
+          <div key={`comm_${comm.id}`} className="p-3 mb-2">
             <Row className="mx-auto d-flex align-items-center">
               <Col xs="auto"><h4>{comm.user.name}</h4></Col>
               <Col>{convertDateTime(comm.inserted_at)}</Col>
-              {comm.user.id === session.user_id || comm.user.id === entry.owner_id &&
+              {(comm.user.id === session.user_id || comm.user.id === entry.owner_id) &&
                 <Col>
                   <Button
                     onClick={() => handle_delete_comment(comm.id)}
@@ -285,8 +288,8 @@ function Display({eventId}) {
     );
   }
 
-  function show_state_to_props({events}) {
-    return {events};
+  function show_state_to_props({session, success}) {
+    return {session, success};
   }
   let Show = connect(show_state_to_props)(Display);
 

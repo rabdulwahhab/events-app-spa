@@ -1,7 +1,7 @@
 defmodule ServersideWeb.EntryController do
   use ServersideWeb, :controller
 
-  # plug Serverside.Plugs.RequireAuth
+  plug Serverside.Plugs.RequireAuth
 
   alias Serverside.Entries
   alias Serverside.Entries.Entry

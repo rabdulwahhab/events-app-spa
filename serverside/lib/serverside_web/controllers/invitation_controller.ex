@@ -5,7 +5,7 @@ defmodule ServersideWeb.InvitationController do
   alias Serverside.Invitations.Invitation
   alias Serverside.Users
   alias Serverside.Entries
-  # plug Serverside.Plugs.RequireAuth
+  plug Serverside.Plugs.RequireAuth
   # plug Serverside.Plugs.RequireOwner when action not in [:index, :show]
 
   require Logger
@@ -28,6 +28,7 @@ defmodule ServersideWeb.InvitationController do
     |> put_status(200)
     |> render("get_invites.json", invitations: invitations, stats: inviteStats)
   end
+
 
   # TODO fix for responding
   # def update(conn, %{"entry_id" => entry_id, "id" => invit_id} = params) do
@@ -134,13 +135,28 @@ defmodule ServersideWeb.InvitationController do
 
   end
 
-  def show(conn, %{"id" => id}) do
-    invitation = Invitations.get_invitation!(id)
-    render(conn, "show.json", invitation: invitation)
+  # def show(conn, %{"id" => id}) do
+  #   invitation = Invitations.get_invitation!(id)
+  #   render(conn, "show.json", invitation: invitation)
+  # end
+
+  def show(conn, %{"id" => invit_id}) do
+    invitation = Invitations.get_invitation(invit_id)
+    unless invitation do
+      conn
+      |> send_resp(400, Jason.encode!(%{errors: ["That invitation doesn't exist"]}))
+    else
+      unless invitation.user_id == conn.assigns[:current_user].id do
+        conn
+        |> send_resp(403, Jason.encode!(%{errors: ["This is awkward"]}))
+      else
+        render(conn, "show.json", invitation: invitation)
+      end
+    end
   end
 
-  def update(conn, %{"invitation" => invitation_params}) do
-    %{id: id} = invitation_params
+  def update(conn, %{"invitation" => invitation_params} = params) do
+    %{"id" => id} = params
     invitation = Invitations.get_invitation!(id)
 
     with {:ok, %Invitation{} = invitation} <- Invitations.update_invitation(invitation, invitation_params) do

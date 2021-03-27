@@ -41,6 +41,7 @@ defmodule Serverside.Invitations do
 
   """
   def get_invitation!(id), do: Repo.get!(Invitation, id)
+  def get_invitation(id), do: Repo.get(Invitation, id)
 
   @doc """
   Creates a invitation.

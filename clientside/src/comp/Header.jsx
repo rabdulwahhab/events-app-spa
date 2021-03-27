@@ -1,5 +1,6 @@
 import { Nav, Alert, Navbar, Row, Col, Button, Form, FormControl } from 'react-bootstrap';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 import store from '../store';
 import { api_auth } from '../api';
 import { capitalize } from '../util';
@@ -32,10 +33,12 @@ function Header({currentPage, errors, success, info, session, dispatch}) {
     <div>
       <Navbar variant="dark" bg="dark" className="p-4 justify-content-between">
         <Row>
-          <Navbar.Brand href="/">{"Events"}</Navbar.Brand>
+          <Link to="/">
+            <Navbar.Brand>{"Events"}</Navbar.Brand>
+          </Link>
           {!session.token &&
-            <Nav className="mx-3">
-              <Nav.Link href="/users/new">{"Register"}</Nav.Link>
+            <Nav className="mx-3 align-items-center">
+              <Link className="text-muted" to="/users/new">{"Register"}</Link>
             </Nav>}
         </Row>
         {!session.token ?
@@ -49,9 +52,9 @@ function Header({currentPage, errors, success, info, session, dispatch}) {
             </Button>
           </Form>) :
           <Row>
-            <Nav className="mx-3">
-              <Nav.Link href="/events">{"View Events"}</Nav.Link>
-              <Nav.Link href="/events/new">{"Create an Event"}</Nav.Link>
+            <Nav className="mx-3 align-items-center">
+              <Link className="text-muted mr-3" to="/events">{"View Events"}</Link>
+              <Link className="text-muted" to="/events/new">{"Create an Event"}</Link>
             </Nav>
             <Row className="align-items-center">
               <Col>
