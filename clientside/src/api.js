@@ -7,7 +7,7 @@ let ERROR = {
 };
 
 function api_base(path) {
-  return `http://events-spa.measuringworm.com/api/v1${path}`;
+  return `http://localhost:4000/api/v1${path}`;
 }
 
 async function api_get(path, body = {}) {
@@ -235,6 +235,9 @@ export function post_invites(entry_id, form_params, success) {
     store.dispatch({ type: "success/set", data: resp["succeeded"].map(suc => `Invited ${suc}`) });
     let errors = resp["malformed"].map(mal => `Couldn't recognize \'${mal}\'. Check your spelling`).concat(resp["failed"].map(fail => `Failed to invite ${fail}`));
     store.dispatch({ type: "errors/set", data: errors });
+    if (errors.length === 0) {
+      success();
+    }
   })
   .catch(err => {
     console.error("POST POST failed", err);
