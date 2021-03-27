@@ -18,11 +18,16 @@ events-spa.measuringworm.com
 
 4. Is your app functionality complete? If not, what's missing?
 
-# TODO
+It mirrors the given user story save for the deep linking for an
+unregistered user. Apart from that the functionality is mainly there
+but I will say that I had a lot of trouble integrating ownership
+access so controls are not very tight on who can edit what resources.
 
 5. Is your app properly deployed? If not, what went wrong?
 
-# TODO
+It is properly deployed. The only slight issue is external routing
+which currently redirects all explicit requests from the address bar
+that are not route to the home page irrespective of route parameters.
 
 
 
