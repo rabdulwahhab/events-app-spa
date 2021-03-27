@@ -59,7 +59,12 @@ function Show({eventId, session}) {
             <tr key={inv.id}>
               <td>{inv.email}</td>
               <td>{translateResponse(inv.response)}</td>
-              <td>{`${inv_url(inv.id)}`}</td>
+              <td>
+                <Link
+                  to={`/events/${eventId}/invites/${inv.id}`}>
+                  {`${inv_url(inv.id)}`}
+                </Link>
+              </td>
             </tr>)}
         </tbody>
       </Table>}

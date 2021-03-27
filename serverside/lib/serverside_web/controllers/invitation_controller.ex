@@ -146,7 +146,7 @@ defmodule ServersideWeb.InvitationController do
       conn
       |> send_resp(400, Jason.encode!(%{errors: ["That invitation doesn't exist"]}))
     else
-      unless invitation.user_id == conn.assigns[:current_user].id do
+      unless invitation.user_id == conn.assigns[:currentUser].id do
         conn
         |> send_resp(403, Jason.encode!(%{errors: ["This is awkward"]}))
       else
