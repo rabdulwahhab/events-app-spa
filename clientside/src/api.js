@@ -116,7 +116,7 @@ export function fetch_events() {
       if (error_resp) {
         store.dispatch({ type: "errors/set", data: error_resp});
       } else {
-        store.dispatch({ type: "events/add", data: resp["data"] });
+        store.dispatch({ type: "events/set", data: resp["data"] });
         clear_errors();
       }
     })
