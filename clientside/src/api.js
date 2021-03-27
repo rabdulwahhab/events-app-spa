@@ -199,7 +199,7 @@ export function post_comment(eventId, form_params, success) {
         store.dispatch({ type: "errors/set", data: parse_errors(resp["errors"]) });
       } else {
         store.dispatch({ type: "success/set", data: ["Comment posted"] })
-        store.dispatch({ type: "events/add", data: resp });
+        // store.dispatch({ type: "events/add", data: resp });
         clear_errors();
         success();
       }

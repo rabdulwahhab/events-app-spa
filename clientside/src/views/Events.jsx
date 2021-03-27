@@ -97,7 +97,7 @@ function New({session, eventId}) {
       name: ev.target[0].value,
       date: ev.target[2].value,
       description: ev.target[1].value,
-      user_id: session.user_id // FIXME use auth plug
+      user_id: session["user_id"] // FIXME use auth plug
     };
 
     let success = () => history.replace("/events");
@@ -190,6 +190,10 @@ function Display({eventId, session, success}) {
     console.log("Fetching event to display...")
     fetch_event(eventId);
   }, [success]);
+
+  React.useEffect(() => {
+    fetch_event(eventId);
+  }, []);
 
   let entry;
   let temp = store.getState().events; // meh
@@ -293,7 +297,7 @@ function Display({eventId, session, success}) {
   }
   let Show = connect(show_state_to_props)(Display);
 
-  function Event() {
+  function Event({session}) {
     // The <Route> that rendered this component has a
     // path of `/topics/:topicId`. The `:topicId` portion
     // of the URL indicates a placeholder that we can
@@ -312,7 +316,7 @@ function Display({eventId, session, success}) {
           <Invites eventId={eventId} />
         </Route>
         <Route path={`${path}/edit`}>
-          <New eventId={eventId} />
+          <New session={session} eventId={eventId} />
         </Route>
       </Switch>
     );
@@ -335,7 +339,7 @@ function Display({eventId, session, success}) {
           <New session={session} />
         </Route>
         <Route path={`${path}/:eventId`}>
-          <Event />
+          <Event session={session} />
         </Route>
       </Switch>
     );
